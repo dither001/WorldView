@@ -8,10 +8,10 @@ buildscript {
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         google()
     }
-    dependencies {
-        
 
-    }
+    dependencies {
+	    classpath 'org.locationtech.jts:jts-core:1.18.1'
+	}
 }
 
 allprojects {
