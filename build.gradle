@@ -8,11 +8,13 @@ buildscript {
     }
 
     dependencies {
-		implementation 'io.netty:netty-all:4.1.65.Final'
+		
     }
 }
 
 allprojects {
+	apply plugin: "java"
+	apply plugin: "application"
     apply plugin: "eclipse"
 
     version = '1.0'
