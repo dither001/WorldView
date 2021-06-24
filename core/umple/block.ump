@@ -1,0 +1,61 @@
+namespace model.block;
+
+external interface IEntity {}
+
+class Block {
+	depend model.world.IEntity;
+	
+	short id;
+    /* BlockUri uri; */
+    String displayName = "Untitled block";
+    /* BlockFamily family; */
+    /* Rotation rotation = Rotation.none(); */
+
+    /* PROPERTIES */
+
+    // Overall behavioural
+    boolean liquid;
+    boolean attachmentAllowed = true;
+    boolean replacementAllowed;
+    int hardness = 3;
+    boolean supportRequired;
+    /* EnumBooleanMap<Side> fullSide = new EnumBooleanMap<>(Side.class); */
+    /* BlockSounds sounds; */
+
+    // Special rendering flags (TODO: clean this up)
+    boolean water;
+    boolean grass;
+    boolean ice;
+
+    // Rendering related
+    /* BlockMeshGenerator meshGenerator = new BlockMeshGeneratorSingleShape(this); */
+    boolean translucent;
+    boolean doubleSided;
+    boolean shadowCasting = true;
+    boolean waving;
+    byte luminance;
+    /* Vector3f tint = new Vector3f(0, 0, 0); */
+
+    // Collision related
+    boolean penetrable;
+    boolean targetable = true;
+    boolean climbable;
+
+    // Physics
+    float mass = 10;
+    boolean debrisOnDestroy = true;
+    float friction = 0.5f;
+    float restitution = 0.0f;
+
+    // Entity integration
+    /* Prefab prefab; */
+    boolean keepActive;
+    IEntity entity = null;
+    boolean lifecycleEventsRequired;
+
+    // Inventory settings
+    boolean directPickup;
+    boolean stackable = true;
+
+	@Override String toString() { return ""; }
+}
