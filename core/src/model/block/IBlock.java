@@ -1,9 +1,9 @@
 package model.block;
 
-import item.IItemStack;
 import model.IWorld;
 import model.entity.IEntityLiving;
 import model.inventory.IInventoryTab;
+import model.item.IItemStack;
 
 public interface IBlock {
 

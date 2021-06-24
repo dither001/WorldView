@@ -1,7 +1,7 @@
 package model.inventory;
 
-import item.IItemStack;
 import model.entity.IEntityPlayer;
+import model.item.IItemStack;
 
 public interface IInventory {
 	int getSizeInventory();
