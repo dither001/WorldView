@@ -16,7 +16,6 @@ public interface IChunk {
 	void flagDirty();
 	
 	IBlock getBlock(IBlockPosition pos);
-
 	IBlock setBlock(IBlockPosition pos, IBlock block);
 
 	IChunkPosition getChunkPosition();
