@@ -1,0 +1,300 @@
+strictness allow 46;
+
+tracer log4j;
+
+namespace com.norvendae.util.concurrent;
+
+class WorldMultiThreading {
+	singleton;
+	
+	depend java.util.Deque;
+	depend java.util.Iterator;
+	depend java.util.Map;
+	depend java.util.Set;
+	depend java.util.concurrent.ConcurrentHashMap;
+	depend java.util.concurrent.ExecutorService;
+	depend java.util.concurrent.ForkJoinPool;
+	depend java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
+	depend java.util.concurrent.ForkJoinWorkerThread;
+	depend java.util.concurrent.Phaser;
+	depend java.util.concurrent.atomic.AtomicBoolean;
+	depend java.util.concurrent.atomic.AtomicInteger;
+	depend java.util.function.BooleanSupplier;
+
+	/* FIXME - temp */
+	internal IConfigMultiThreading config = (IConfigMultiThreading) new Object(); // FIXME - replace with actual config
+
+	lazy internal Phaser p;
+	lazy internal ExecutorService ex;
+	lazy internal IServer mcs;
+	internal AtomicBoolean isTicking = new AtomicBoolean();
+	internal AtomicInteger threadID = new AtomicInteger();
+
+	/* */
+	internal Map<String, Set<Thread>> threadTracker = new ConcurrentHashMap<String, Set<Thread>>();
+
+	/* statistics */
+	internal AtomicInteger currentWorlds = new AtomicInteger();
+	internal AtomicInteger currentEnts = new AtomicInteger();
+	internal AtomicInteger currentTEs = new AtomicInteger();
+	internal AtomicInteger currentEnvs = new AtomicInteger();
+
+	internal Set<String> currentTasks = ConcurrentHashMap.newKeySet();
+
+	/* constructor */
+	after constructor {
+		setupThreadpool(4);
+	}
+
+	void setupThreadpool(int parallelism) {
+		threadID = new AtomicInteger();
+		final ClassLoader cl = (ClassLoader) new Object(); // FIXME = MCMT.class.getClassLoader();
+		ForkJoinWorkerThreadFactory fjpf = p -> {
+			ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
+			fjwt.setName("MCMT-Pool-Thread-" + threadID.getAndIncrement());
+			regThread("MCMT", fjwt);
+			fjwt.setContextClassLoader(cl);
+			return fjwt;
+		};
+		ex = new ForkJoinPool(parallelism, fjpf, null, false);
+	}
+
+	void regThread(String poolName, Thread thread) {
+		threadTracker.computeIfAbsent(poolName, s -> ConcurrentHashMap.newKeySet()).add(thread);
+	}
+
+	boolean isThreadPooled(String poolName, Thread t) {
+		return threadTracker.containsKey(poolName) && threadTracker.get(poolName).contains(t);
+	}
+
+	boolean serverExecutionThreadPatch(IServer ms) {
+		return isThreadPooled("MCMT", Thread.currentThread());
+	}
+
+	void preTick(IServer server) {
+		if (p != null) {
+			logger.warn("Multiple servers?");
+			return;
+		} else {
+			isTicking.set(true);
+			p = new Phaser();
+			p.register();
+			mcs = server;
+//			StatsCommand.setServer(mcs); // FIXME
+		}
+	}
+
+	void callTick(IServerWorld serverworld, BooleanSupplier hasTimeLeft, IServer server) {
+		if (config.isMultithreadingDisabled() || config.worldMultiThreadingDisabled()) {
+			try {
+				serverworld.tick(hasTimeLeft);
+			} catch (Exception e) {
+				throw e;
+			} finally {
+//				net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld); // FIXME
+			}
+			return;
+		}
+		if (mcs != server) {
+			logger.warn("Multiple servers?");
+			config.disableMultithreading();
+			serverworld.tick(hasTimeLeft);
+//			net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld); // FIXME
+			return;
+		} else {
+			String taskName = "WorldTick: " + serverworld.toString() + "@" + serverworld.hashCode();
+			if (config.multiThreadingLoggingDisabled()) {
+				currentTasks.add(taskName);
+			}
+
+			p.register();
+			ex.execute(() -> {
+				try {
+					currentWorlds.incrementAndGet();
+					serverworld.tick(hasTimeLeft);
+					if (config.disableWorldPostTick()) {
+						p.register();
+						ex.execute(() -> {
+							try {
+								// ForkJoinPool.managedBlock(
+								// new RunnableManagedBlocker(() -> {
+
+								// FIXME
+//								synchronized (net.minecraftforge.fml.hooks.BasicEventHooks.class) { net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld); }
+								// END FIXME
+
+								// }));
+								// } catch (InterruptedException e) {
+								// e.printStackTrace();
+							} finally {
+								p.arriveAndDeregister();
+							}
+						});
+					} else {
+//						net.minecraftforge.fml.hooks.BasicEventHooks.onPostWorldTick(serverworld); // FIXME
+					}
+				} finally {
+					p.arriveAndDeregister();
+					currentWorlds.decrementAndGet();
+					if (config.multiThreadingLoggingDisabled()) {
+						currentTasks.remove(taskName);
+					}
+
+				}
+			});
+		}
+
+	}
+
+	void callEntityTick(IEntity entityIn, IServerWorld serverworld) {
+		if (config.isMultithreadingDisabled() || config.entityMultiThreadingDisabled()) {
+			entityIn.tick();
+			return;
+		}
+		String taskName = "EntityTick: " + entityIn.toString() + "@" + entityIn.hashCode();
+		if (config.multiThreadingLoggingDisabled())
+			currentTasks.add(taskName);
+		p.register();
+		ex.execute(() -> {
+			try {
+				currentEnts.incrementAndGet();
+				entityIn.tick();
+			} finally {
+				currentEnts.decrementAndGet();
+				p.arriveAndDeregister();
+				if (config.multiThreadingLoggingDisabled()) {
+					currentTasks.remove(taskName);
+				}
+			}
+		});
+	}
+
+//
+	void callTickEnvironment(IServerWorld world, IChunk chunk, int k, IServerChunkProvider scp) {
+		if (config.isMultithreadingDisabled() || config.environmentMultiThreadingDisabled()) {
+			world.tickEnvironment(chunk, k);
+			return;
+		}
+		String taskName = "EnvTick: " + chunk.toString() + "@" + chunk.hashCode();
+		if (config.multiThreadingLoggingDisabled()) {
+			currentTasks.add(taskName);
+		}
+		p.register();
+		ex.execute(() -> {
+			try {
+				currentEnvs.incrementAndGet();
+				world.tickEnvironment(chunk, k);
+			} finally {
+				currentEnvs.decrementAndGet();
+				p.arriveAndDeregister();
+				if (config.multiThreadingLoggingDisabled()) {
+					currentTasks.remove(taskName);
+				}
+			}
+		});
+	}
+
+	boolean filterTE(ITickableTileEntity tte) {
+		boolean isLocking = false;
+		if (config.getTileEntityBlackList().contains(tte.getClass())) {
+			isLocking = true;
+		}
+		// Apparently a string starts with check is faster than Class.getPackage; who
+		// knew (I didn't)
+		if (!isLocking && config.chunkLockUnknownEntities()
+				&& !tte.getClass().getName().startsWith("net.minecraft.tileentity.")) {
+			isLocking = true;
+		}
+		if (isLocking && config.getTileEntityWhiteList().contains(tte.getClass())) {
+			isLocking = false;
+		}
+//		if (tte instanceof PistonTileEntity) {
+//			isLocking = true; ?? FIXME
+//		}
+		return isLocking;
+	}
+
+	void callTileEntityTick(ITickableTileEntity tte, IWorld world) {
+		if (config.isMultithreadingDisabled() || config.tileEntityMultiThreadingDisabled()
+				|| !(world instanceof IServerWorld)) {
+			tte.tick();
+			return;
+		}
+		String taskName = "TETick: " + tte.toString() + "@" + tte.hashCode();
+		if (config.multiThreadingLoggingDisabled())
+			currentTasks.add(taskName);
+		p.register();
+		ex.execute(() -> {
+			try {
+				final boolean doLock = filterTE(tte);
+				if (doLock) {
+					// ForkJoinPool.managedBlock(new RunnableManagedBlocker(() -> {
+					IBlockPosition bp = ((ITileEntity) tte).getPosition();
+					long[] locks = IChunkLock.lock(bp, 1);
+					try {
+						currentTEs.incrementAndGet();
+						tte.tick();
+					} finally {
+						IChunkLock.unlock(locks);
+					}
+					// }));
+				} else {
+					currentTEs.incrementAndGet();
+					tte.tick();
+				}
+
+			} catch (Exception e) {
+				System.err.println("Exception ticking TE at " + ((ITileEntity) tte).getPosition());
+				e.printStackTrace();
+
+			} finally {
+				currentTEs.decrementAndGet();
+				p.arriveAndDeregister();
+				if (config.multiThreadingLoggingDisabled()) {
+					currentTasks.remove(taskName);
+				}
+
+			}
+		});
+	}
+
+	void sendQueuedBlockEvents(Deque<IBlockEventData> d, IServerWorld sw) {
+		Iterator<IBlockEventData> bed = d.iterator();
+		while (bed.hasNext()) {
+			IBlockEventData blockeventdata = bed.next();
+			if (sw.fireBlockEvent(blockeventdata)) {
+				/* 1.16.1 code; AKA the only thing that changed */
+//				sw.getServer().getPlayerList().sendToAllNearExcept((IPlayerEntity)null, (double)blockeventdata.getPosition().getX(), (double)blockeventdata.getPosition().getY(), (double)blockeventdata.getPosition().getZ(), 64.0D, sw.func_234923_W_(), new SBlockActionPacket(blockeventdata.getPosition(), blockeventdata.getBlock(), blockeventdata.getEventID(), blockeventdata.getEventParameter()));
+				/* */
+				/*
+				 * 1.15.2 code; AKA the only thing that changed
+				 * sw.getServer().getPlayerList().sendToAllNearExcept((PlayerEntity)null,
+				 * (double)blockeventdata.getPosition().getX(),
+				 * (double)blockeventdata.getPosition().getY(),
+				 * (double)blockeventdata.getPosition().getZ(), 64.0D,
+				 * sw.getDimension().getType(), new
+				 * SBlockActionPacket(blockeventdata.getPosition(), blockeventdata.getBlock(),
+				 * blockeventdata.getEventID(), blockeventdata.getEventParameter())); /*
+				 */
+			}
+			if (!isTicking.get()) {
+				logger.fatal("Block updates outside of tick");
+			}
+			bed.remove();
+		}
+	}
+
+	void postTick(IServer server) {
+		if (mcs != server) {
+			logger.warn("Multiple servers?");
+			return;
+		} else {
+			p.arriveAndAwaitAdvance();
+			isTicking.set(false);
+			p = null;
+		}
+	}
+	
+	/* */
+	String toString() { return this.getClass().getSimpleName(); }
+}
