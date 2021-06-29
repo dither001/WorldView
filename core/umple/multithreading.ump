@@ -4,6 +4,10 @@ tracer log4j;
 
 namespace com.norvendae.util.concurrent;
 
+/* 
+	code based on:
+	https://github.com/jediminer543/JMT-MCMT
+*/
 class WorldMultiThreading {
 	singleton;
 	
