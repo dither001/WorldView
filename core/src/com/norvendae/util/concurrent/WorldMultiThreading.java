@@ -2,6 +2,7 @@
 /*This code was generated using the UMPLE 1.30.2.5248.dba0a5744 modeling language!*/
 
 package com.norvendae.util.concurrent;
+
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,100 +16,107 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import main.*;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
+import main.IBlockEventData;
+import main.IBlockPosition;
+import main.IChunk;
+import main.IChunkLock;
+import main.IConfigMultiThreading;
+import main.IEntity;
+import main.IServer;
+import main.IServerChunkProvider;
+import main.IServerWorld;
+import main.ITickableTileEntity;
+import main.ITileEntity;
+import main.IWorld;
 
 /**
  * code based on:
  * https://github.com/jediminer543/JMT-MCMT/tree/e8e2f19c06c4c9b9704b79ddb4dc0031b0ac36a1
  */
 // line 11 "../../../../multithreading.ump"
-public class WorldMultiThreading
-{
+public class WorldMultiThreading {
 
-  //------------------------
-  // STATIC VARIABLES
-  //------------------------
+	// ------------------------
+	// STATIC VARIABLES
+	// ------------------------
 
+	/**
+	 * log4j version 2 requires jars (log4j-api-2.0.1.jar) and
+	 * (log4j-core-2.0.1.jar)
+	 */
+	public static final Logger logger = LogManager.getLogger(WorldMultiThreading.class);
+	private static WorldMultiThreading theInstance = null;
 
-  /**
-   * log4j version 2
-   * requires jars (log4j-api-2.0.1.jar) and (log4j-core-2.0.1.jar)
-   */
-  public static final Logger logger = LogManager.getLogger(WorldMultiThreading.class);  private static WorldMultiThreading theInstance = null;
+	// ------------------------
+	// MEMBER VARIABLES
+	// ------------------------
 
-  //------------------------
-  // MEMBER VARIABLES
-  //------------------------
+	// WorldMultiThreading Attributes
 
-  //WorldMultiThreading Attributes
+	/**
+	 * FIXME - temp FIXME - replace with actual config
+	 */
+	private IConfigMultiThreading config;
+	private Phaser p;
+	private ExecutorService ex;
+	private IServer mcs;
+	private AtomicBoolean isTicking;
+	private AtomicInteger threadID;
 
-  /**
-   * FIXME - temp
-   * FIXME - replace with actual config
-   */
-  private IConfigMultiThreading config;
-  private Phaser p;
-  private ExecutorService ex;
-  private IServer mcs;
-  private AtomicBoolean isTicking;
-  private AtomicInteger threadID;
+	/**
+	 * 
+	 */
+	private Map<String, Set<Thread>> threadTracker;
 
-  /**
-   * 
-   */
-  private Map<String,Set<Thread>> threadTracker;
+	/**
+	 * statistics
+	 */
+	private AtomicInteger currentWorlds;
+	private AtomicInteger currentEnts;
+	private AtomicInteger currentTEs;
+	private AtomicInteger currentEnvs;
+	private Set<String> currentTasks;
 
-  /**
-   * statistics
-   */
-  private AtomicInteger currentWorlds;
-  private AtomicInteger currentEnts;
-  private AtomicInteger currentTEs;
-  private AtomicInteger currentEnvs;
-  private Set<String> currentTasks;
+	// ------------------------
+	// CONSTRUCTOR
+	// ------------------------
 
-  //------------------------
-  // CONSTRUCTOR
-  //------------------------
+	private WorldMultiThreading() {
+		config = (IConfigMultiThreading) new Object();
+		isTicking = new AtomicBoolean();
+		threadID = new AtomicInteger();
+		threadTracker = new ConcurrentHashMap<String, Set<Thread>>();
+		currentWorlds = new AtomicInteger();
+		currentEnts = new AtomicInteger();
+		currentTEs = new AtomicInteger();
+		currentEnvs = new AtomicInteger();
+		currentTasks = ConcurrentHashMap.newKeySet();
+		// line 50 "../../../../multithreading.ump"
+		setupThreadpool(4);
+		// END OF UMPLE AFTER INJECTION
+	}
 
-  private WorldMultiThreading()
-  {
-    config = (IConfigMultiThreading) new Object();
-    isTicking = new AtomicBoolean();
-    threadID = new AtomicInteger();
-    threadTracker = new ConcurrentHashMap<String, Set<Thread>>();
-    currentWorlds = new AtomicInteger();
-    currentEnts = new AtomicInteger();
-    currentTEs = new AtomicInteger();
-    currentEnvs = new AtomicInteger();
-    currentTasks = ConcurrentHashMap.newKeySet();
-    // line 50 "../../../../multithreading.ump"
-    setupThreadpool(4);
-    // END OF UMPLE AFTER INJECTION
-  }
+	public static WorldMultiThreading getInstance() {
+		if (theInstance == null) {
+			theInstance = new WorldMultiThreading();
+		}
+		return theInstance;
+	}
 
-  public static WorldMultiThreading getInstance()
-  {
-    if(theInstance == null)
-    {
-      theInstance = new WorldMultiThreading();
-    }
-    return theInstance;
-  }
+	// ------------------------
+	// INTERFACE
+	// ------------------------
 
-  //------------------------
-  // INTERFACE
-  //------------------------
+	public void delete() {
+	}
 
-  public void delete()
-  {}
-
-  // line 54 "../../../../multithreading.ump"
-  public void setupThreadpool(int parallelism){
-    threadID = new AtomicInteger();
+	// line 54 "../../../../multithreading.ump"
+	public void setupThreadpool(int parallelism) {
+		threadID = new AtomicInteger();
 		final ClassLoader cl = (ClassLoader) new Object(); // FIXME = MCMT.class.getClassLoader();
 		ForkJoinWorkerThreadFactory fjpf = p -> {
 			ForkJoinWorkerThread fjwt = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(p);
@@ -118,26 +126,26 @@ public class WorldMultiThreading
 			return fjwt;
 		};
 		ex = new ForkJoinPool(parallelism, fjpf, null, false);
-  }
+	}
 
-  // line 67 "../../../../multithreading.ump"
-  public void regThread(String poolName, Thread thread){
-    threadTracker.computeIfAbsent(poolName, s -> ConcurrentHashMap.newKeySet()).add(thread);
-  }
+	// line 67 "../../../../multithreading.ump"
+	public void regThread(String poolName, Thread thread) {
+		threadTracker.computeIfAbsent(poolName, s -> ConcurrentHashMap.newKeySet()).add(thread);
+	}
 
-  // line 71 "../../../../multithreading.ump"
-  public boolean isThreadPooled(String poolName, Thread t){
-    return threadTracker.containsKey(poolName) && threadTracker.get(poolName).contains(t);
-  }
+	// line 71 "../../../../multithreading.ump"
+	public boolean isThreadPooled(String poolName, Thread t) {
+		return threadTracker.containsKey(poolName) && threadTracker.get(poolName).contains(t);
+	}
 
-  // line 75 "../../../../multithreading.ump"
-  public boolean serverExecutionThreadPatch(IServer ms){
-    return isThreadPooled("MCMT", Thread.currentThread());
-  }
+	// line 75 "../../../../multithreading.ump"
+	public boolean serverExecutionThreadPatch(IServer ms) {
+		return isThreadPooled("MCMT", Thread.currentThread());
+	}
 
-  // line 79 "../../../../multithreading.ump"
-  public void preTick(IServer server){
-    if (p != null) {
+	// line 79 "../../../../multithreading.ump"
+	public void preTick(IServer server) {
+		if (p != null) {
 			logger.warn("Multiple servers?");
 			return;
 		} else {
@@ -147,11 +155,11 @@ public class WorldMultiThreading
 			mcs = server;
 //			StatsCommand.setServer(mcs); // FIXME
 		}
-  }
+	}
 
-  // line 92 "../../../../multithreading.ump"
-  public void callTick(IServerWorld serverworld, BooleanSupplier hasTimeLeft, IServer server){
-    if (config.isMultithreadingDisabled() || config.worldMultiThreadingDisabled()) {
+	// line 92 "../../../../multithreading.ump"
+	public void callTick(IServerWorld serverworld, BooleanSupplier hasTimeLeft, IServer server) {
+		if (config.isMultithreadingDisabled() || config.worldMultiThreadingDisabled()) {
 			try {
 				serverworld.tick(hasTimeLeft);
 			} catch (Exception e) {
@@ -209,11 +217,11 @@ public class WorldMultiThreading
 				}
 			});
 		}
-  }
+	}
 
-  // line 154 "../../../../multithreading.ump"
-  public void callEntityTick(IEntity entityIn, IServerWorld serverworld){
-    if (config.isMultithreadingDisabled() || config.entityMultiThreadingDisabled()) {
+	// line 154 "../../../../multithreading.ump"
+	public void callEntityTick(IEntity entityIn, IServerWorld serverworld) {
+		if (config.isMultithreadingDisabled() || config.entityMultiThreadingDisabled()) {
 			entityIn.tick();
 			return;
 		}
@@ -233,15 +241,14 @@ public class WorldMultiThreading
 				}
 			}
 		});
-  }
+	}
 
-
-  /**
-   * 
-   */
-  // line 178 "../../../../multithreading.ump"
-  public void callTickEnvironment(IServerWorld world, IChunk chunk, int k, IServerChunkProvider scp){
-    if (config.isMultithreadingDisabled() || config.environmentMultiThreadingDisabled()) {
+	/**
+	 * 
+	 */
+	// line 178 "../../../../multithreading.ump"
+	public void callTickEnvironment(IServerWorld world, IChunk chunk, int k, IServerChunkProvider scp) {
+		if (config.isMultithreadingDisabled() || config.environmentMultiThreadingDisabled()) {
 			world.tickEnvironment(chunk, k);
 			return;
 		}
@@ -262,11 +269,11 @@ public class WorldMultiThreading
 				}
 			}
 		});
-  }
+	}
 
-  // line 202 "../../../../multithreading.ump"
-  public boolean filterTE(ITickableTileEntity tte){
-    boolean isLocking = false;
+	// line 202 "../../../../multithreading.ump"
+	public boolean filterTE(ITickableTileEntity tte) {
+		boolean isLocking = false;
 		if (config.getTileEntityBlackList().contains(tte.getClass())) {
 			isLocking = true;
 		}
@@ -283,11 +290,11 @@ public class WorldMultiThreading
 //			isLocking = true; ?? FIXME
 //		}
 		return isLocking;
-  }
+	}
 
-  // line 222 "../../../../multithreading.ump"
-  public void callTileEntityTick(ITickableTileEntity tte, IWorld world){
-    if (config.isMultithreadingDisabled() || config.tileEntityMultiThreadingDisabled()
+	// line 222 "../../../../multithreading.ump"
+	public void callTileEntityTick(ITickableTileEntity tte, IWorld world) {
+		if (config.isMultithreadingDisabled() || config.tileEntityMultiThreadingDisabled()
 				|| !(world instanceof IServerWorld)) {
 			tte.tick();
 			return;
@@ -328,11 +335,11 @@ public class WorldMultiThreading
 
 			}
 		});
-  }
+	}
 
-  // line 266 "../../../../multithreading.ump"
-  public void sendQueuedBlockEvents(Deque<IBlockEventData> d, IServerWorld sw){
-    Iterator<IBlockEventData> bed = d.iterator();
+	// line 266 "../../../../multithreading.ump"
+	public void sendQueuedBlockEvents(Deque<IBlockEventData> d, IServerWorld sw) {
+		Iterator<IBlockEventData> bed = d.iterator();
 		while (bed.hasNext()) {
 			IBlockEventData blockeventdata = bed.next();
 			if (sw.fireBlockEvent(blockeventdata)) {
@@ -355,11 +362,11 @@ public class WorldMultiThreading
 			}
 			bed.remove();
 		}
-  }
+	}
 
-  // line 292 "../../../../multithreading.ump"
-  public void postTick(IServer server){
-    if (mcs != server) {
+	// line 292 "../../../../multithreading.ump"
+	public void postTick(IServer server) {
+		if (mcs != server) {
 			logger.warn("Multiple servers?");
 			return;
 		} else {
@@ -367,15 +374,14 @@ public class WorldMultiThreading
 			isTicking.set(false);
 			p = null;
 		}
-  }
+	}
 
-
-  /**
-   * 
-   */
-  // line 303 "../../../../multithreading.ump"
-  public String toString(){
-    return this.getClass().getSimpleName();
-  }
+	/**
+	 * 
+	 */
+	// line 303 "../../../../multithreading.ump"
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
 
 }
