@@ -1,0 +1,16 @@
+
+class Math {
+
+	double clamp(double val, double min, double max) {
+		return val = val > max ? max : val < min ? min : val;
+	}
+
+	float clamp(float val, float min, float max) {
+		return val = val > max ? max : val < min ? min : val;
+	}
+
+	int clamp(int val, int min, int max) {
+		return val = val > max ? max : val < min ? min : val;
+	}
+
+}
