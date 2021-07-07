@@ -17,21 +17,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import main.IBlockEventData;
-import main.IBlockPosition;
-import main.IChunk;
-import main.IChunkLock;
-import main.IConfigMultiThreading;
-import main.IEntity;
-import main.IServer;
-import main.IServerChunkProvider;
-import main.IServerWorld;
-import main.ITickableTileEntity;
-import main.ITileEntity;
-import main.IWorld;
+import misc.IBlockEventData;
+import misc.IBlockPosition;
+import misc.IChunk;
+import misc.IChunkLock;
+import misc.IConfigMultiThreading;
+import misc.IEntity;
+import misc.IServer;
+import misc.IServerChunkProvider;
+import misc.IServerWorld;
+import misc.ITickableTileEntity;
+import misc.ITileEntity;
+import misc.IWorld;
 
 /**
  * code based on:

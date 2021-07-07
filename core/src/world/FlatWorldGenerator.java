@@ -1,7 +1,7 @@
 package world;
 
-import main.IChunk;
-import main.IWorld;
+import misc.IChunk;
+import misc.IWorld;
 
 public class FlatWorldGenerator implements IWorldGenerator {
 
