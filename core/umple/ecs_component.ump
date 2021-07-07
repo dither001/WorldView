@@ -1,0 +1,61 @@
+use ecs_entity.ump;
+use ecs_event.ump;
+use ecs_rule.ump;
+
+strictness allow 1008;
+
+namespace api.ecs.component;
+
+external Arrays {}
+
+interface IComponent {}
+
+interface IComponentGroup {
+	isA IComponent;
+	
+	boolean addComponent(IComponent aComponent);
+	boolean removeComponent(IComponent aComponent);
+	IComponent getComponent(int index);
+	IComponent[] getComponents();
+	int numberOfComponents();
+	boolean hasComponents();
+	int indexOfComponent(IComponent aComponent);
+	
+	default IComponent getComponent(IComponent aComponent) { return getComponent(indexOfComponent(aComponent)); }
+}
+
+/* */
+/* IMPLEMENTATION */
+/* */
+namespace main.ecs.component;
+
+
+class AIComponent {
+	isA IComponent;
+}
+
+class AttributeComponent {
+	isA IComponent;
+}
+
+class CooldownComponent {
+	isA IComponent;
+	immutable int start;
+	immutable int end;
+}
+
+class LivingEntityComponent {
+
+
+
+	boolean isAlive;
+}
+
+class StatusEffectComponent {
+	isA IComponent;
+}
+
+class SpawnEntityComponent {
+	isA IComponent;
+}
+

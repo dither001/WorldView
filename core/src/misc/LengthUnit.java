@@ -1,4 +1,4 @@
-package main;
+package misc;
 
 /*
  * Based directly upon the TimeUnit class from the *.time package.
