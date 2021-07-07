@@ -1,0 +1,24 @@
+
+namespace ecs.entity;
+
+external IComponentGroup {}
+
+
+/* */
+/* */
+/* */
+interface IEntity {
+	isA IComponentGroup;
+	
+	const IEntity NULL = NullEntity.getInstance();
+	
+	UUID getId();
+	boolean isActive();
+	boolean isPersistent();
+}
+
+class NullEntity {
+	singleton;
+	isA IEntity;
+}
+

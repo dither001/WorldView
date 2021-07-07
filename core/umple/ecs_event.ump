@@ -1,0 +1,16 @@
+
+
+interface IEvent {
+	void notifySubscribers();
+}
+
+interface IEventSubscriber {
+	Consumer<IEvent> getConsumerEvent();
+	IEventSubscriber setConsumerEvent();
+}
+
+class Event {
+	isA IEvent;
+	
+	IEventSubscriber[] subscribers;
+}

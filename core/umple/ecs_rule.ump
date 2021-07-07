@@ -1,0 +1,58 @@
+namespace api.ecs.rule;
+
+interface ISpell {
+	const ISpell NULL = NullSpell.getInstance();
+
+	boolean beforeCast(Function<Boolean, ISpellContext> beforeCast);
+	boolean cast(Function<Boolean, ISpellContext> cast);
+	boolean continuous(Function<Boolean, ISpellContext> continuous);
+	boolean afterCast(Function<Boolean, ISpellContext> afterCast);
+}
+
+interface ISpellContext {}
+
+interface IStatusEffect {}
+
+/* */
+/* */
+/* */
+namespace main.ecs.rule;
+
+class DamageSource {
+}
+
+/* */
+/* */
+/* */
+class SpellContext {
+	IWorld world;
+	IEntity caster;
+}
+
+class NullSpell {
+	singleton;
+	
+	isA ISpell;
+}
+
+/* */
+/* */
+/* */
+class StatusEffect {
+	isA IStatusEffect;
+	
+	const String BENEFICIAL = "beneficial";
+	const String HARMFUL = "harmful";
+	const String NEUTRAL = "neutral";
+	
+
+	boolean isInstantaneous;
+	boolean isDuration;
+	
+	boolean isBeneficial;
+	boolean isHarmful;
+	
+	String id;
+	String displayName;
+	String description;
+}

@@ -1,0 +1,17 @@
+
+namespace util;
+
+class Util {
+	singleton;
+	
+	depend java.util.Optional;
+
+	public <T> boolean ensure(T quality) {
+		return quality == null ? false
+			: quality.getClass().equals(Boolean.class) 
+			? ((Boolean) quality).booleanValue()
+			: quality.getClass().equals(Optional.class) 
+			? ((Optional<?>) quality).isPresent() 
+			: true;
+	}
+}
