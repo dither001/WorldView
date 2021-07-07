@@ -29,6 +29,17 @@ class SpellContext {
 	IEntity caster;
 }
 
+class SpellSchool {
+	const String ABJURATION = "abjuration";
+	const String CONJURATION = "conjuration";
+	const String DIVINATION = "divination";
+	const String ENCHANTMENT = "enchantment";
+	const String EVOCATION = "evocation";
+	const String ILLUSION = "illusion";
+	const String NECROMANCY = "necromancy";
+	const String TRANSMUTATION = "transmutation";
+}
+
 class NullSpell {
 	singleton;
 	

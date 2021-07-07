@@ -1,0 +1,118 @@
+
+namespace api.ai;
+
+interface IAction {
+	boolean canDo();
+	boolean isDone();
+	float getCost();
+	void reset();
+}
+
+interface IGoal {}
+
+@FunctionalInterface interface ICondition {
+	depend java.util.function.Predicate;
+
+	<T> Predicate<T> getTest();
+	
+	default <T> boolean isMet (T value) {
+		return getTest().test(value);
+	}
+}
+
+
+
+namespace main.ai;
+
+class AIBehavior {
+	depend java.util.function.*;
+
+	Predicate calm;
+	Predicate provoke;
+	Predicate startle;
+
+	IEvent trigger;
+
+	after set*Trigger { testEmotion(); }
+
+	void testEmotion() {};
+
+	activity {
+		Waiting {}
+		Moving {}
+		Resting {}
+		Working {}
+		Playing {}
+	}
+
+	emotion {
+		Bored { 
+			testEmotion() [provoke.test(trigger) || startle.test(trigger)] -> Alert; 
+		}
+		Afraid {
+			testEmotion() [provoke.test(trigger)] -> Alert; 
+		}
+		Alert {
+			testEmotion() [provoke.test(trigger)] -> Angry; 
+			testEmotion() [startle.test(trigger)] -> Afraid; 
+		}
+		Angry {
+			testEmotion() [startle.test(trigger)] -> Alert; 
+		}
+	}
+
+	agency {
+		Idle {}
+		MoveTo {}
+		PerformAction {}
+	}
+}
+
+class Action {
+	isA IAction;
+
+	/* */
+	const String ATTACK_MELEE = "";
+	const String ATTACK_RANGED = "";
+	const String BEG = "";
+	const String BREED = "";
+	const String BREAK_BLOCK = "";
+	const String BREAK_TILE_ENTITY = "";
+	const String EAT_BLOCK = "";
+	const String USE_ITEM = "";
+	const String USE_TILE_ENTITY = "";
+	const String WAIT = "";
+
+	/* movement */
+	const String APPROACH = "";
+	const String AVOID = "";
+	const String PATROL = "";
+	const String RETURN_HOME = "";
+	const String SEARCH = "";
+
+	/* */
+	const String CLIMB = "";
+	const String FOLLOW = "";
+	const String JUMP = "";
+	const String LURE = "";
+	const String SWIM = "";
+	const String WANDER = "";
+
+	/* */
+
+
+	/* targets */
+	IEntity host;
+	
+	/* properties */
+	ICondition[] conditions;
+}
+
+/* */
+/* */
+/* */
+
+class DistanceCondition {
+	isA ICondition;
+	
+}

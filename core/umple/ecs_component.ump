@@ -45,7 +45,10 @@ class CooldownComponent {
 }
 
 class LivingEntityComponent {
+	float hunger;
 
+	float stamina;
+	float sanity;
 
 
 	boolean isAlive;
