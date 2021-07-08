@@ -1,0 +1,5 @@
+use ecs_component.ump;
+
+namespace api.spell;
+
+namespace main.spell;

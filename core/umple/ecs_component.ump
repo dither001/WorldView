@@ -6,8 +6,6 @@ strictness allow 1008;
 
 namespace api.ecs.component;
 
-external Arrays {}
-
 interface IComponent {}
 
 interface IComponentGroup {

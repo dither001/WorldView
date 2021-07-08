@@ -7,9 +7,14 @@ interface ISpell {
 	boolean cast(Function<Boolean, ISpellContext> cast);
 	boolean continuous(Function<Boolean, ISpellContext> continuous);
 	boolean afterCast(Function<Boolean, ISpellContext> afterCast);
+	
+	Predicate<ISpellContext> getBlockHitEvent;
+	Predicate<ISpellContext> getEntityHitEvent;
+	Predicate<ISpellContext> getMissEvent;
 }
 
-interface ISpellContext {}
+interface ISpellContext {
+}
 
 interface IStatusEffect {}
 
