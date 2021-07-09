@@ -1,11 +1,22 @@
 
+strictness allow 46;
+
 namespace api.ai;
 
 interface IAction {
-	boolean canDo();
-	boolean isDone();
+	boolean isInRange();
+	void setInRange(boolean aInRange);
+	boolean requiresInRange();
 	float getCost();
+
+	boolean testConditions(IActor aActor);
+
+	boolean canDo();
+	boolean execute(IActor aActor);
+	boolean isDone();
+
 	void reset();
+
 }
 
 interface IGoal {}
@@ -21,21 +32,21 @@ interface IGoal {}
 }
 
 
-
+/* */
+/* */
+/* */
 namespace main.ai;
 
 class AIBehavior {
 	depend java.util.function.*;
 
-	Predicate calm;
-	Predicate provoke;
-	Predicate startle;
+	Predicate<IEvent> calm;
+	Predicate<IEvent> provoke;
+	Predicate<IEvent> startle;
 
 	IEvent trigger;
 
 	after set*Trigger { testEmotion(); }
-
-	void testEmotion() {};
 
 	activity {
 		Waiting {}
@@ -66,6 +77,8 @@ class AIBehavior {
 		MoveTo {}
 		PerformAction {}
 	}
+	
+	@Override String toString() { return getClass().getSimpleName(); }
 }
 
 class Action {
@@ -73,22 +86,26 @@ class Action {
 
 	/* */
 	const String ATTACK_MELEE = "";
+
+	/* movement */
+	const String MOVE_TO = "";
+
+	/* */
+	const String APPROACH = "";
 	const String ATTACK_RANGED = "";
+	const String AVOID = "";
 	const String BEG = "";
 	const String BREED = "";
 	const String BREAK_BLOCK = "";
 	const String BREAK_TILE_ENTITY = "";
 	const String EAT_BLOCK = "";
+	const String PATROL = "";
+	const String PICKUP_ITEM = "";
+	const String RETURN_HOME = "";
+	const String SEARCH = "";
 	const String USE_ITEM = "";
 	const String USE_TILE_ENTITY = "";
 	const String WAIT = "";
-
-	/* movement */
-	const String APPROACH = "";
-	const String AVOID = "";
-	const String PATROL = "";
-	const String RETURN_HOME = "";
-	const String SEARCH = "";
 
 	/* */
 	const String CLIMB = "";

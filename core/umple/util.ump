@@ -15,3 +15,23 @@ class Util {
 			: true;
 	}
 }
+
+class Lists {
+	singleton;
+	
+	depend java.util.ArrayList;
+
+	public static <T> ArrayList<T> newArrayList() {
+		return new ArrayList<T>();
+	}
+}
+
+class Sets {
+	singleton;
+	
+	depend java.util.HashSet;
+
+	public static <T> HashSet<T> newHashSet() {
+		return new HashSet<T>();
+	}
+}
