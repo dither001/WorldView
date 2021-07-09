@@ -1,9 +1,41 @@
-
 strictness allow 46;
+
 
 namespace api.ai;
 
 interface IAction {
+	/* */
+	const String ATTACK_MELEE = "";
+
+	/* movement */
+	const String MOVE_TO = "";
+
+	/* */
+	const String APPROACH = "";
+	const String ATTACK_RANGED = "";
+	const String AVOID = "";
+	const String BEG = "";
+	const String BREED = "";
+	const String BREAK_BLOCK = "";
+	const String BREAK_TILE_ENTITY = "";
+	const String EAT_BLOCK = "";
+	const String PATROL = "";
+	const String PICKUP_ITEM = "";
+	const String RETURN_HOME = "";
+	const String SEARCH = "";
+	const String USE_ITEM = "";
+	const String USE_TILE_ENTITY = "";
+	const String WAIT = "";
+
+	/* */
+	const String CLIMB = "";
+	const String FOLLOW = "";
+	const String JUMP = "";
+	const String LURE = "";
+	const String SWIM = "";
+	const String WANDER = "";
+
+	/* */
 	boolean isInRange();
 	void setInRange(boolean aInRange);
 	boolean requiresInRange();
@@ -19,7 +51,28 @@ interface IAction {
 
 }
 
-interface IGoal {}
+interface INeed {
+	/* https://en.wikipedia.org/wiki/Manfred_Max-Neef%27s_Fundamental_human_needs */
+	const String LIVELIHOOD = "livelihood";
+
+	const String AFFECTION = "affection";
+	const String CREATION = "creation";
+	const String FREEDOM = "freedom";
+	const String IDENTITY = "identity";
+	const String LEISURE = "leisure";
+	const String PARTICIPATION = "participation";
+	const String PROTECTION = "protection";
+	const String SUBSISTENCE = "subsistence";
+	const String UNDERSTANDING = "understanding";
+}
+
+interface IGoal {
+	/* Specific – target a specific area for improvement. */
+	/* Measurable – quantify or at least suggest an indicator of progress. */
+	/* Assignable – specify who will do it. */
+	/* Realistic – state what results can realistically be achieved, given available resources. */
+	/* Time-related – specify when the result(s) can be achieved. */
+}
 
 @FunctionalInterface interface ICondition {
 	depend java.util.function.Predicate;
@@ -83,41 +136,6 @@ class AIBehavior {
 
 class Action {
 	isA IAction;
-
-	/* */
-	const String ATTACK_MELEE = "";
-
-	/* movement */
-	const String MOVE_TO = "";
-
-	/* */
-	const String APPROACH = "";
-	const String ATTACK_RANGED = "";
-	const String AVOID = "";
-	const String BEG = "";
-	const String BREED = "";
-	const String BREAK_BLOCK = "";
-	const String BREAK_TILE_ENTITY = "";
-	const String EAT_BLOCK = "";
-	const String PATROL = "";
-	const String PICKUP_ITEM = "";
-	const String RETURN_HOME = "";
-	const String SEARCH = "";
-	const String USE_ITEM = "";
-	const String USE_TILE_ENTITY = "";
-	const String WAIT = "";
-
-	/* */
-	const String CLIMB = "";
-	const String FOLLOW = "";
-	const String JUMP = "";
-	const String LURE = "";
-	const String SWIM = "";
-	const String WANDER = "";
-
-	/* */
-
-
 	/* targets */
 	IEntity host;
 	
